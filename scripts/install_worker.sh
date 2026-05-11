@@ -10,7 +10,7 @@ pip3 install pika pymongo boto3 fastapi uvicorn
 
 echo "[3] Cloning repo..."
 rm -rf /app
-git clone https://github.com/JACardonaMorales/ChefGPT2.git /app
+git clone https://github.com/JACardonaMorales/ChefGPT2-app.git /app
 
 echo "[4] Creating systemd service..."
 cat > /etc/systemd/system/worker.service << 'EOF'
