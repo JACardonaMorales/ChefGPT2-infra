@@ -3,7 +3,7 @@ resource "aws_instance" "mongodb" {
   ami                    = var.ami_id
   instance_type          = var.instance_type
   key_name               = var.key_name
-  subnet_id              = var.subnet_ids[0]
+  subnet_id              = data.aws_subnets.default.ids[0]
   vpc_security_group_ids = [aws_security_group.mongodb_sg.id]
   iam_instance_profile   = "LabInstanceProfile"
   user_data              = file("${path.module}/scripts/install_mongodb.sh")
@@ -16,7 +16,7 @@ resource "aws_instance" "rabbitmq" {
   ami                    = var.ami_id
   instance_type          = var.instance_type
   key_name               = var.key_name
-  subnet_id              = var.subnet_ids[0]
+  subnet_id              = data.aws_subnets.default.ids[0]
   vpc_security_group_ids = [aws_security_group.rabbitmq_sg.id]
   iam_instance_profile   = "LabInstanceProfile"
   user_data              = file("${path.module}/scripts/install_rabbitmq.sh")
@@ -28,16 +28,16 @@ resource "aws_instance" "rabbitmq" {
 resource "aws_ssm_parameter" "rabbitmq_ip" {
   name        = "/chefgpt/dev/rabbitmq/public_ip"
   type        = "String"
-  value       = aws_instance.rabbitmq.public_ip
-  description = "IP pública de RabbitMQ"
+  value       = aws_instance.rabbitmq.private_ip
+  description = "IP privada de RabbitMQ (nombre legado, usa IP privada)"
   overwrite   = true
 }
 
 resource "aws_ssm_parameter" "mongodb_ip" {
   name        = "/chefgpt/dev/mongodb/public_ip"
   type        = "String"
-  value       = aws_instance.mongodb.public_ip
-  description = "IP pública de MongoDB"
+  value       = aws_instance.mongodb.private_ip
+  description = "IP privada de MongoDB (nombre legado, usa IP privada)"
   overwrite   = true
 }
 
@@ -46,7 +46,7 @@ resource "aws_instance" "worker" {
   ami                    = var.ami_id
   instance_type          = var.instance_type
   key_name               = var.key_name
-  subnet_id              = var.subnet_ids[0]
+  subnet_id              = data.aws_subnets.default.ids[0]
   vpc_security_group_ids = [aws_security_group.worker_sg.id]
   iam_instance_profile   = "LabInstanceProfile"
   user_data              = file("${path.module}/scripts/install_worker.sh")
@@ -62,7 +62,7 @@ resource "aws_instance" "api" {
   ami                    = var.ami_id
   instance_type          = var.instance_type
   key_name               = var.key_name
-  subnet_id              = var.subnet_ids[count.index]
+  subnet_id              = data.aws_subnets.default.ids[count.index]
   vpc_security_group_ids = [aws_security_group.api_sg.id]
   iam_instance_profile   = "LabInstanceProfile"
   user_data              = file("${path.module}/scripts/install_api.sh")
@@ -77,7 +77,7 @@ resource "aws_lb_target_group" "api_tg" {
   name     = "chefgpt-api-tg"
   port     = 8000
   protocol = "HTTP"
-  vpc_id   = var.vpc_id
+  vpc_id   = data.aws_vpc.default.id
 
   health_check {
     path                = "/"
@@ -101,7 +101,7 @@ resource "aws_lb" "api_alb" {
   internal           = false
   load_balancer_type = "application"
   security_groups    = [aws_security_group.alb_sg.id]
-  subnets            = var.subnet_ids
+  subnets            = data.aws_subnets.default.ids
 
   tags = { Name = "ChefGPT-ALB" }
 }
